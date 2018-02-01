@@ -21,7 +21,7 @@ class Mailer {
 
         $message = $this->createMessage($to, $subject, $message);
 
-        $message->setFrom(isset($options['from']) ? $options['from'] : 'mailer@'.(isset($_SERVER["SERVER_NAME"]) ? $_SERVER["SERVER_NAME"] : 'localhost'));
+        $message->setFrom(isset($options['from']) ? $options['from'] : 'mailer@'.(isset($_SERVER["SERVER_NAME"]) ? $_SERVER["SERVER_NAME"] : 'localhost'), isset($options['fromName']) ? $options["fromName"] : false);
 
         if (isset($options['reply_to'])) {
             $message->addReplyTo($options['reply_to']);
@@ -66,11 +66,15 @@ class Mailer {
             if (isset($this->options['smtp']) && is_array($this->options['smtp'])) {
                 $mail->SMTPOptions = $this->options['smtp'];
             }
+
+            if(isset($this->options["bcc"]) && $this->options['bcc'] ) {
+               $mail->addBCC($this->options["from"]);
+            }
         }
 
         $mail->Subject = $subject;
         $mail->Body    = $message;
-        $mail->AltBody = strip_tags($message);
+        $mail->AltBody = (isset($this->options["alt_body"])) ? $this->options["alt_body"] : strip_tags($message);
         $mail->CharSet = 'utf-8';
 
         $to_array = explode(",", $to);
