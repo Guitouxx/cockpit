@@ -55,6 +55,16 @@
                             </div>
 
                             <div class="uk-form-row">
+                                <label class="uk-text-small">@lang('Hash')</label>
+                                <input class="uk-width-1-1 uk-form-large" type="text" bind="account.hash" autocomplete="off">
+                            </div>
+
+                             <div class="uk-form-row">
+                                <label class="uk-text-small">@lang('ResetPass')</label>
+                                <input class="uk-width-1-1 uk-form-large" type="text" bind="account.reset" autocomplete="off">
+                            </div>
+
+                            <div class="uk-form-row">
                                 <label class="uk-text-small">@lang('New Password')</label>
                                 <div class="uk-form-password uk-width-1-1">
                                     <input class="uk-form-large uk-width-1-1" type="password" placeholder="@lang('Password')" bind="account.password" autocomplete="off">

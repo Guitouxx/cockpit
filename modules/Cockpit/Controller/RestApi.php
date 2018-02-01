@@ -26,7 +26,7 @@ class RestApi extends \LimeExtra\Controller {
         $token['whoisit'] = $user["_id"];
         $token['expire'] = time() + (15 * 60); // 15 minutes;
 
-        return ["user" => $user, "jwt" => \Firebase\JWT\JWT::encode($token, COCKPIT_JWT)];
+        return ["user" => $user, "jwt" => \Firebase\JWT\JWT::encode($token, $this->app->config["fiiiirst"]["jwt"])];
     }
 
     public function isLogged() {
@@ -36,7 +36,7 @@ class RestApi extends \LimeExtra\Controller {
             return $this->stop('{"error": "Missing jwt"}', 412);
         }
 
-        $token = \Firebase\JWT\JWT::decode($data['jwt'], COCKPIT_JWT, ["HS256"]);
+        $token = \Firebase\JWT\JWT::decode($data['jwt'], $this->app->config["fiiiirst"]["jwt"], ["HS256"]);
         
         //check expiration
         if($token->expire < time()) {
@@ -90,9 +90,10 @@ class RestApi extends \LimeExtra\Controller {
                 "i18n"     => "en"
             ], $data);
 
-            if (isset($data['api_key'])) {
-                $data['api_key'] = uniqid('account-').uniqid();
-            }
+            //create an api_key directly
+            // if (isset($data['api_key'])) {
+            $data['api_key'] = uniqid('account-').uniqid();
+            // }
 
             // check for duplicate users
             if ($user = $this->app->storage->findOne("cockpit/accounts", ["user" => $data["user"]])) {
@@ -121,6 +122,13 @@ class RestApi extends \LimeExtra\Controller {
         if (isset($data["password"])) {
             unset($data["password"]);
         }
+
+        //---create photography entry
+        $photographer = $this->module('collections')->save("photographers", [
+            'name' => $data["name"],
+            'edition' => $this->app->config["fiiiirst"]["edition"],
+            'email' => $data["email"]
+        ]);
 
         //verify links
         $urls = ["verify.html", "verify_plain.html"];
@@ -158,20 +166,19 @@ class RestApi extends \LimeExtra\Controller {
             return $this->stop('{"error": "Sorry, this link is not valid."}', 412);
         }
 
-        unset($user["hash"]);
-        
         if($user["active"]) {
             return $this->stop('{"warning": "Thank you, your account is already activated!"}', 412);
         }
 
         $user["active"] = true;
+        $user["hash"] = false;
 
         $this->app->storage->save("cockpit/accounts", $user);
         
         if (isset($user["password"])) {
             unset($user["password"]);
         }
- 
+
         return $user;
     }
 
