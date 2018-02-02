@@ -91,10 +91,8 @@ class RestApi extends \LimeExtra\Controller {
             ], $data);
 
             //create an api_key directly
-            // if (isset($data['api_key'])) {
             $data['api_key'] = uniqid('account-').uniqid();
-            // }
-
+            
             // check for duplicate users
             if ($user = $this->app->storage->findOne("cockpit/accounts", ["user" => $data["user"]])) {
                 return $this->stop('{"error": "Sorry, this email already exists!"}', 412);
@@ -116,7 +114,6 @@ class RestApi extends \LimeExtra\Controller {
             $data["_created"] = $data["_modified"];
         }
         
-        $data["hash"] = password_hash($data["email"], PASSWORD_DEFAULT);
         $this->app->storage->save("cockpit/accounts", $data);
 
         if (isset($data["password"])) {
@@ -134,36 +131,77 @@ class RestApi extends \LimeExtra\Controller {
         $urls = ["verify.html", "verify_plain.html"];
         $bodies = array();
 
+        $token = array();
+        $token['whoisit'] = $data["_id"];
+        $jwt = \Firebase\JWT\JWT::encode($token, $this->app->config["fiiiirst"]["jwt"]);
+
         foreach($urls as $url) {
             $body = file_get_contents(COCKPIT_DIR."/mail_templates/".$url);
             $body = preg_replace("/{{server}}/", $this->app->config["fiiiirst"]["host"], $body);
             $body = preg_replace("/{{name}}/", $data["name"], $body);
-            $body = preg_replace("/{{code}}/", preg_replace('/@/', "~", $data["email"]), $body);
+            $body = preg_replace("/{{code}}/", $jwt, $body);
 
             array_push($bodies, $body);
         }
 
+        //send email
         return $this->app->mailer->mail($data["email"], "Activating your account", $bodies[0], ["alt_body" => $bodies[1]]);
+    }
+
+    public function resetPassword() {
+        $email = $this->param("email");
+        
+        if (!$email) {
+            return $this->stop('{"error": "Missing email"}', 412);
+        }
+
+        //get user from mail
+        $user = $this->storage->findOne("cockpit/accounts", ["email" => $email]);
+
+        if(!$user) {
+            return $this->stop('{"error": "This email is not registered in our system!<br/>Please try again!"}', 412);
+        }
+
+        //createthe jwt token
+        $token = array();
+        $token['whoisit'] = $user["_id"];
+        $token['expire'] = time() + (60 * 60); // 1h
+        $jwt = \Firebase\JWT\JWT::encode($token, $this->app->config["fiiiirst"]["jwt"]);
+        
+        //verify links
+        $urls = ["reset_password.html", "reset_password_plain.html"];
+        $bodies = array();
+
+        foreach($urls as $url) {
+            $body = file_get_contents(COCKPIT_DIR."/mail_templates/".$url);
+            $body = preg_replace("/{{server}}/", $this->app->config["fiiiirst"]["host"], $body);
+            $body = preg_replace("/{{name}}/", $user["name"], $body);
+            $body = preg_replace("/{{code}}/", $jwt, $body);
+
+            array_push($bodies, $body);
+        }
+
+        //send email
+        return $this->app->mailer->mail($email, "Reset your password", $bodies[0], ["alt_body" => $bodies[1]]);
     }
 
     public function verifyEmail() {
         $data = [
-            "email" => $this->param('email')
+            "jwt" => $this->param('jwt')
         ];
         
-        if (!$data['email']) {
-            return $this->stop('{"error": "Missing email"}', 412);
+        if (!$data['jwt']) {
+            return $this->stop('{"error": "Missing jwt"}', 412);
         }
 
+        //check if the jwt is correct
+        $token = \Firebase\JWT\JWT::decode($data['jwt'], $this->app->config["fiiiirst"]["jwt"], ["HS256"]);
+
         //check if the key is correct
-        $user = $this->storage->findOne("cockpit/accounts", ["email" => $data['email']]);
+        $user = $this->storage->findOne("cockpit/accounts", ["_id" => $token->whoisit]);
         
         if(!$user) {
             return $this->stop('{"error": "Sorry, there is a problem with your account. Please contact me at guillaume@fiiiirst.com"}', 412);
-        }
-
-        if(!password_verify($data["email"], $user["hash"])) {
-            return $this->stop('{"error": "Sorry, this link is not valid."}', 412);
         }
 
         if($user["active"]) {
@@ -171,13 +209,71 @@ class RestApi extends \LimeExtra\Controller {
         }
 
         $user["active"] = true;
-        $user["hash"] = false;
 
         $this->app->storage->save("cockpit/accounts", $user);
         
         if (isset($user["password"])) {
             unset($user["password"]);
         }
+
+        return $user;
+    }
+
+    public function verifyLostPassLink() {
+        $data = [
+            "jwt" => $this->param('code')
+        ];
+        
+        if (!$data['jwt']) {
+            return $this->stop('{"error": "Missing JWT"}', 412);
+        }
+
+        //check if the jwt is correct
+        $token = \Firebase\JWT\JWT::decode($data['jwt'], $this->app->config["fiiiirst"]["jwt"], ["HS256"]);
+        
+        //check expiration
+        if($token->expire < time()) {
+            return $this->stop('{"error": "Sorry, this link to reset your password has expired.<br/>Please, send a new request to reset."}', 401);
+        }
+
+        $user = $this->storage->findOne("cockpit/accounts", ["_id" => $token->whoisit]);
+        
+        if(!$user) {
+            return $this->stop('{"error": "Sorry, this link is not valid.<br/>Please contact me at guillaume@fiiiirst.com"}', 412);
+        }
+
+        if (isset($user["password"])) unset($user["password"]);
+        if (isset($user["api_key"])) unset($user["api_key"]);
+
+        return $user;
+    }
+
+    public function savePassword() {
+        $data = [
+            "password" => $this->param('password'),
+            "jwt" => $this->param('jwt')
+        ];
+        
+        if (!$data['password'] || !$data['jwt']) {
+            return $this->stop('{"error": "Missing parameters"}', 412);
+        }
+
+        //check if the jwt is correct
+        $token = \Firebase\JWT\JWT::decode($data['jwt'], $this->app->config["fiiiirst"]["jwt"], ["HS256"]);
+
+        //get user
+        $user = $this->storage->findOne("cockpit/accounts", ["_id" => $token->whoisit]);
+       
+        if(!$user) {
+            return $this->stop('{"error": "Sorry, there is a problem with your account.<br/>Please contact me at guillaume@fiiiirst.com"}', 412);
+        }
+
+        $user["password"] = $this->app->hash($data["password"]);
+        
+        $this->app->storage->save("cockpit/accounts", $user);
+
+        if (isset($user["password"])) unset($user["password"]);
+        if (isset($user["api_key"])) unset($user["api_key"]);
 
         return $user;
     }
