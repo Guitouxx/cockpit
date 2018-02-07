@@ -1,6 +1,7 @@
 <field-layout>
 
     <style>
+
         .layout-components > div {
             margin-bottom: 5px;
         }
@@ -14,13 +15,27 @@
             pointer-events: none;
         }
 
+        .layout-components.empty {
+            min-height: 100px;
+            border: 1px rgba(0,0,0,.1) solid;
+        }
+
+        .layout-components.empty:after {
+            font-family: FontAwesome;
+            content: "\f1b3";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            font-size: 14px;
+            transform: translate3d(-50%, -50%, 0);
+            color: rgba(0,0,0,.3);
+        }
+
     </style>
 
-    <div class="uk-text-center uk-text-muted {opts.child ? 'uk-text-small':'uk-placeholder'}" show="{ !items.length }">
-        <img class="uk-svg-adjust" riot-src="{ App.base('/assets/app/media/icons/layout.svg') }" width="100" data-uk-svg>
-    </div>
 
-    <div class="uk-sortable layout-components" ref="components" show="{mode=='edit' && items.length}" data-uk-sortable="animation:false, group:'field-layout-items'">
+    <div class="uk-sortable layout-components {!items.length && 'empty'}" ref="components" data-uk-sortable="animation:false, group:'field-layout-items'">
+
         <div class="uk-panel-box uk-panel-card" each="{ item,idx in items }" data-idx="{idx}">
 
             <div class="uk-flex uk-flex-middle uk-text-small uk-visible-hover">
