@@ -85,19 +85,21 @@ function cockpit($module = null) {
             'memory'       => [ "server" => "redislite://".(COCKPIT_STORAGE_FOLDER."/data/cockpit.memory.sqlite"), "options" => [] ],
 
             'paths'         => [
-                '#root'     => COCKPIT_DIR,
-                '#storage'  => COCKPIT_STORAGE_FOLDER,
-                '#pstorage' => COCKPIT_PUBLIC_STORAGE_FOLDER,
-                '#data'     => COCKPIT_STORAGE_FOLDER.'/data',
-                '#cache'    => COCKPIT_STORAGE_FOLDER.'/cache',
-                '#tmp'      => COCKPIT_STORAGE_FOLDER.'/tmp',
-                '#thumbs'   => COCKPIT_PUBLIC_STORAGE_FOLDER.'/thumbs',
-                '#uploads'  => COCKPIT_PUBLIC_STORAGE_FOLDER.'/uploads',
-                '#modules'  => COCKPIT_DIR.'/modules',
-                '#addons'   => COCKPIT_DIR.'/addons',
-                '#config'   => COCKPIT_CONFIG_DIR,
-                'assets'    => COCKPIT_DIR.'/assets',
-                'site'      => COCKPIT_SITE_DIR
+                '#root'         => COCKPIT_DIR,
+                '#storage'      => COCKPIT_STORAGE_FOLDER,
+                '#pstorage'     => COCKPIT_PUBLIC_STORAGE_FOLDER,
+                '#data'         => COCKPIT_STORAGE_FOLDER.'/data',
+                '#cache'        => COCKPIT_STORAGE_FOLDER.'/cache',
+                '#tmp'          => COCKPIT_STORAGE_FOLDER.'/tmp',
+                '#thumbs'       => COCKPIT_PUBLIC_STORAGE_FOLDER.'/thumbs',
+                '#uploads'      => COCKPIT_PUBLIC_STORAGE_FOLDER.'/uploads',
+                '#folios'       => COCKPIT_PUBLIC_STORAGE_FOLDER.'/portfolios',
+                '#discussions'   => COCKPIT_PUBLIC_STORAGE_FOLDER.'/discussions',
+                '#modules'      => COCKPIT_DIR.'/modules',
+                '#addons'       => COCKPIT_DIR.'/addons',
+                '#config'       => COCKPIT_CONFIG_DIR,
+                'assets'        => COCKPIT_DIR.'/assets',
+                'site'          => COCKPIT_SITE_DIR
             ]
 
         ], is_array($customconfig) ? $customconfig : []);

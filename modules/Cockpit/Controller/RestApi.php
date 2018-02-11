@@ -24,7 +24,7 @@ class RestApi extends \LimeExtra\Controller {
   
         $token = array();
         $token['whoisit'] = $user["_id"];
-        $token['expire'] = time() + (15 * 60); // 15 minutes;
+        $token['expire'] = time() + (30 * 60); // 30 minutes;
 
         return ["user" => $user, "jwt" => \Firebase\JWT\JWT::encode($token, $this->app->config["fiiiirst"]["jwt"])];
     }
@@ -43,10 +43,14 @@ class RestApi extends \LimeExtra\Controller {
             return $this->stop('{"error": "jwt expired"}', 401);
         }
 
+        $new_token = array();
+        $new_token['whoisit'] = $token->whoisit;
+        $new_token['expire'] = time() + (30 * 60); // 30 minutes;
+
         $user = $this->storage->findOne("cockpit/accounts", ["_id" => $token->whoisit]);
         unset($user["password"]);
  
-        return ["user" => $user];
+        return ["user" => $user, "jwt" => \Firebase\JWT\JWT::encode($new_token, $this->app->config["fiiiirst"]["jwt"])];
     }
 
     public function saveUser() {
@@ -276,6 +280,83 @@ class RestApi extends \LimeExtra\Controller {
         if (isset($user["api_key"])) unset($user["api_key"]);
 
         return $user;
+    }
+
+    public function upload() {
+       
+        if(empty($_FILES)) return $this->stop('{"error": "Your request to upload is not valid"}', 412);
+        $id = $this->param('_id');
+
+        if(!$id) return $this->stop('{"error": "Missing user id"}', 412);
+        
+        $photographer = $this->module('collections')->find("photographers", ['filter' => ["_id" => $id]]);
+        
+        if(!count($photographer)) return $this->stop('{"error": "Sorry, we can\'t find your profile."}', 412);
+        
+        //upload File
+        $photographer = $photographer[0];
+        $user_slug = $photographer["name_slug"];
+        
+        if(count($photographer["uploads"]) >= 15) return $this->stop('{"error": "Sorry, you cannot upload more than 15 pictures"}', 412);
+        
+        $path = $this->app->path('#folios:').$user_slug."_user";
+        
+        //create folder
+        if (!is_dir($path)) mkdir($path);
+        
+        $total_files = count($_FILES["file"]["name"]);
+        
+        for($i=0;$i<$total_files;$i++)
+        {
+            $filename = preg_replace('/[^a-zA-Z0-9-_\.]/','', str_replace(' ', '-', $_FILES['file']['name'][$i]));
+            $tempFile = $_FILES['file']['tmp_name'][$i];
+            $targetpath = $path."/".$filename;
+            
+            if(!move_uploaded_file($tempFile,$targetpath)) {
+                return $this->stop('{"error": "There was an error during the upload of the picture '.$_FILES['file']['name'][$i].'"}', 412);
+            }
+       
+            //---create thumbnails
+            $options = array(
+                "cachefolder" => $path,
+                "src" => preg_replace("/".addcslashes(COCKPIT_SITE_DIR, "/")."/", "", $targetpath),
+                "mode" => "resize",
+                "width" => 200,
+            );
+    
+            $thumbnail = $this->module('cockpit')->thumbnail($options);
+       
+            if(!isset($photographer["uploads"])) $photographer["uploads"] = [];
+            $photographer["uploads"][] = ["original" => $options["src"], "thumb" => $thumbnail];
+        }
+
+
+        // ---update photography entry
+        $photographer = $this->module('collections')->save("photographers", $photographer);
+
+        return json_encode($photographer, JSON_PRETTY_PRINT);
+    }
+
+    public function removePicture() {
+        $data = $this->param('data');
+        if(!$data) return $this->stop('{"error": "Missing data"}', 412);
+
+        //--remove both pictures
+        if(is_file(COCKPIT_SITE_DIR.$data["asset"]["original"])) {
+            $original = unlink(COCKPIT_SITE_DIR.$data["asset"]["original"]);
+
+            if(!$original) return $this->stop('{"error": "Error when removing original picture"}', 412);
+        }
+
+        if(is_file(COCKPIT_SITE_DIR.$data["asset"]["thumb"])) {
+            $thumb = unlink(COCKPIT_SITE_DIR.$data["asset"]["thumb"]);
+
+            if(!$thumb) return $this->stop('{"error": "Error when removing thumb picture"}', 412);
+        }
+
+        //--return the list
+        $photographer = $this->module('collections')->save("photographers", $data["profile"]);
+        return json_encode($photographer, JSON_PRETTY_PRINT);
     }
 
     public function listUsers() {
