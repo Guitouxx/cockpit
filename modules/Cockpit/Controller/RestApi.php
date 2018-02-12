@@ -299,7 +299,7 @@ class RestApi extends \LimeExtra\Controller {
         
         if(count($photographer["uploads"]) >= 15) return $this->stop('{"error": "Sorry, you cannot upload more than 15 pictures"}', 412);
         
-        $path = $this->app->path('#folios:').$user_slug."_user";
+        $path = $this->app->path('#folios:')."_".$user_slug;
         
         //create folder
         if (!is_dir($path)) mkdir($path);

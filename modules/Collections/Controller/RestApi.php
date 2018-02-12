@@ -217,4 +217,84 @@ class RestApi extends \LimeExtra\Controller {
 
         return $extended ? $collections : array_keys($collections);
     }
+
+    public function upload($name = null) {
+        $user = $this->module('cockpit')->getUser();
+
+        ///-------
+
+        if(empty($_FILES)) return $this->stop('{"error": "Your request to upload is not valid"}', 412);
+        
+        $id = $this->param('_id');
+        $userid = $this->param('_userid');
+        if(!$id || !$userid) return $this->stop('{"error": "Missing id"}', 412);
+        
+        $discussion = $this->module('collections')->find("discussions", ['filter' => ["_id" => $id]]);
+        
+        if(!count($discussion)) return $this->stop('{"error": "Sorry, we can\'t find your discussion."}', 412);
+        
+        $discussion = $discussion[0];
+        $discussion_slug = $discussion["name_slug"];
+
+        //my turn?
+        if($discussion["turn"]["_id"] !== $userid) return $this->stop('{"error": "Sorry it\'s not your turn yet"}', 412);
+    
+        //get next author
+        $nextauthor;
+        foreach($discussion["photographers"] as $author) {
+            if($author["_id"] != $userid) {
+                $nextauthor = $this->module('collections')->find("photographers", ['filter' => ["_id" => $author["_id"]]])[0];
+            }
+        }
+        
+        // if(count($discussion["uploads"]) >= 15) return $this->stop('{"error": "Sorry, you cannot upload more than 15 pictures"}', 412);
+        
+        //path
+        $path = $this->app->path('#discussions:')."_".$discussion_slug;
+        
+        //create folder
+        if (!is_dir($path)) mkdir($path);
+        
+        //upload
+        $filename = preg_replace('/[^a-zA-Z0-9-_\.]/','', str_replace(' ', '-', $_FILES['file']['name']));
+        $tempFile = $_FILES['file']['tmp_name'];
+        $targetpath = $path."/".$filename;
+            
+        if(!move_uploaded_file($tempFile,$targetpath)) {
+            return $this->stop('{"error": "There was an error during the upload of the picture '.$_FILES['file']['name'].'"}', 412);
+        }
+    
+        if(!isset($discussion["uploads"])) $discussion["uploads"] = [];
+        $discussion["uploads"][] = ["original" => preg_replace("/".addcslashes(COCKPIT_SITE_DIR, "/")."/", "", $targetpath)];
+
+        // ---update discussion entry
+        $discussion["turn"] = [
+            "_id" => $nextauthor["_id"],
+            "display" => $nextauthor["name"],
+            "link" => "photographers"
+        ];
+
+        $discussion = $this->module('collections')->save("discussions", $discussion);
+
+        //---send email
+
+        $urls = ["discussion_new_photo.html", "discussion_new_photo_plain.html"];
+        $bodies = array();
+
+        foreach($urls as $url) {
+            $body = file_get_contents(COCKPIT_DIR."/mail_templates/".$url);
+            $body = preg_replace("/{{server}}/", $this->app->config["fiiiirst"]["host"], $body);
+            $body = preg_replace("/{{name}}/", $nextauthor["name"], $body);
+            $body = preg_replace("/{{img}}/", $this->app->config["fiiiirst"]["api"].end($discussion["uploads"])["original"], $body);
+            
+            array_push($bodies, $body);
+        }
+
+        //send email
+        if(!$this->app->mailer->mail($nextauthor["email"], "New photo in your discussion", $bodies[0], ["alt_body" => $bodies[1]])) {
+            return $this->stop('{"warning": "There was an error to contact your penfriend, but your picture has been uploaded"}', 412);
+        }
+
+        return json_encode($discussion, JSON_PRETTY_PRINT);
+    }
 }
