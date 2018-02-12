@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Discover the last photo of your discussion | Fiiiirst.com</title>
+  <link href='https://fonts.googleapis.com/css?family=Raleway' rel='stylesheet' type='text/css'>
+  <link href="http://{{server}}/static/css/skeleton.css" rel="stylesheet" type="text/css">
+  <style>
+  	html{
+      font-size: 80%;
+    }
+    body{
+      margin: 0px;
+      padding: 0px;
+    }
+
+    #email{
+    	position: absolute;
+    	width: 100%;
+    	height: 100%;
+    	top: 0px;
+      padding-top: 20px;
+    	background: #FFF; /* Old browsers */
+    }
+    	
+   	.container{
+   		min-width: 100%;
+   		text-align: center;
+   	}
+   	.logo{
+      display: block;
+   		margin-bottom: 6rem;
+   	}
+   	h1{
+   		font-weight: 400;
+   		font-size: 3rem;
+   	}
+   	hr{
+   		width: 10%;
+   		margin: 20px auto 25px auto;
+   		border-color: rgba(0, 0, 0, .2);
+   	}
+  	.small{
+  		font-size: 11px;
+      margin: 2px;
+  	}
+
+    a.btn{
+      margin-bottom: 1.5rem;
+      display: block;
+    }
+
+    img.screenshot {
+      width: 80%;
+      margin: auto 10%;
+    }
+  </style>
+</head>
+<body>
+<div id="email">
+	<div class='container'>
+		<a class='logo' href="http://{{server}}">
+			<img src="http://{{server}}/static/logo.png" />
+		</a>
+		<h1>Hello {{name}},</h1>
+		<p>Yeah! You completed your discussion.<br/>Here is the latest photo from your penfriend.</p>
+		<p><img class='screenshot' src='http://{{img}}' /></p>
+		<p>Please use the button below to view it online.</p>
+		<a class="btn" href="http://{{server}}/login">
+			<button>Go to your account</button>
+		</a>
+		<p class='small'>Thanks!
+			<br/>
+			<a href="mailto:guillaume@fiiiirst.com">
+				<i>Guillaume Tomasi</i>
+			</a>
+		</p>
+	</div>
+</body>
+</html>

@@ -247,7 +247,7 @@ class RestApi extends \LimeExtra\Controller {
             }
         }
         
-        // if(count($discussion["uploads"]) >= 15) return $this->stop('{"error": "Sorry, you cannot upload more than 15 pictures"}', 412);
+        if($discussion["completed"]) return $this->stop('{"error": "Sorry, the discussion is already completed"}', 412);
         
         //path
         $path = $this->app->path('#discussions:')."_".$discussion_slug;
@@ -268,6 +268,9 @@ class RestApi extends \LimeExtra\Controller {
         $discussion["uploads"][] = ["original" => preg_replace("/".addcslashes(COCKPIT_SITE_DIR, "/")."/", "", $targetpath)];
 
         // ---update discussion entry
+        $discussion["cancelled"] = $this->param('cancelled');
+        $discussion["continued"] = $this->param('continued');
+        $discussion["completed"] = $this->param('completed');
         $discussion["turn"] = [
             "_id" => $nextauthor["_id"],
             "display" => $nextauthor["name"],
@@ -277,8 +280,7 @@ class RestApi extends \LimeExtra\Controller {
         $discussion = $this->module('collections')->save("discussions", $discussion);
 
         //---send email
-
-        $urls = ["discussion_new_photo.html", "discussion_new_photo_plain.html"];
+        $urls = $discussion["completed"] ? ["discussion_completed.html", "discussion_completed_plain.html"] : ["discussion_new_photo.html", "discussion_new_photo_plain.html"];
         $bodies = array();
 
         foreach($urls as $url) {
@@ -291,7 +293,7 @@ class RestApi extends \LimeExtra\Controller {
         }
 
         //send email
-        if(!$this->app->mailer->mail($nextauthor["email"], "New photo in your discussion", $bodies[0], ["alt_body" => $bodies[1]])) {
+        if(!$this->app->mailer->mail($nextauthor["email"], ($discussion["completed"]) ? "Your discussion is completed !!" : "New photo in your discussion", $bodies[0], ["alt_body" => $bodies[1]])) {
             return $this->stop('{"warning": "There was an error to contact your penfriend, but your picture has been uploaded"}', 412);
         }
 
