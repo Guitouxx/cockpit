@@ -11,10 +11,13 @@ class RestApi extends \LimeExtra\Controller {
     public function authUser() {
 
         $data = [ 'user' => $this->param('user'), 'password' => $this->param('password') ];
+        
 
         if (!$data['user'] || !$data['password']) {
             return $this->stop('{"error": "Missing user or password"}', 412);
         }
+
+        $data["group"] = ($data['user'] === "guillaume@fiiiirst.com") ? "admin" : "photographer";
 
         $user = $this->module('cockpit')->authenticate($data);
 
@@ -24,13 +27,14 @@ class RestApi extends \LimeExtra\Controller {
   
         $token = array();
         $token['whoisit'] = $user["_id"];
+        $token['group'] = $user["group"];
         $token['expire'] = time() + (30 * 60); // 30 minutes;
 
         return ["user" => $user, "jwt" => \Firebase\JWT\JWT::encode($token, $this->app->config["fiiiirst"]["jwt"])];
     }
 
     public function isLogged() {
-        $data = [ "jwt" => $this->param('jwt') ];
+        $data = [ "jwt" => $this->param('jwt'), "group" => $this->param("group")];
         
         if (!$data['jwt']) {
             return $this->stop('{"error": "Missing jwt"}', 412);
@@ -45,9 +49,10 @@ class RestApi extends \LimeExtra\Controller {
 
         $new_token = array();
         $new_token['whoisit'] = $token->whoisit;
+        $new_token['group'] = $token->group;
         $new_token['expire'] = time() + (30 * 60); // 30 minutes;
 
-        $user = $this->storage->findOne("cockpit/accounts", ["_id" => $token->whoisit]);
+        $user = $this->storage->findOne("cockpit/accounts", ["_id" => $token->whoisit, "group" => $data["group"] ? $data["group"] : $token->group]);
         unset($user["password"]);
  
         return ["user" => $user, "jwt" => \Firebase\JWT\JWT::encode($new_token, $this->app->config["fiiiirst"]["jwt"])];
@@ -137,6 +142,7 @@ class RestApi extends \LimeExtra\Controller {
 
         $token = array();
         $token['whoisit'] = $data["_id"];
+        $token['group'] = $data["group"];
         $jwt = \Firebase\JWT\JWT::encode($token, $this->app->config["fiiiirst"]["jwt"]);
 
         foreach($urls as $url) {
@@ -169,6 +175,7 @@ class RestApi extends \LimeExtra\Controller {
         //createthe jwt token
         $token = array();
         $token['whoisit'] = $user["_id"];
+        $token['group'] = $user["group"];
         $token['expire'] = time() + (60 * 60); // 1h
         $jwt = \Firebase\JWT\JWT::encode($token, $this->app->config["fiiiirst"]["jwt"]);
         
