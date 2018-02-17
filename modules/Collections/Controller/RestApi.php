@@ -265,7 +265,10 @@ class RestApi extends \LimeExtra\Controller {
         }
     
         if(!isset($discussion["uploads"])) $discussion["uploads"] = [];
-        $discussion["uploads"][] = ["original" => preg_replace("/".addcslashes(COCKPIT_SITE_DIR, "/")."/", "", $targetpath)];
+        $discussion["uploads"][] = [
+            "original" => preg_replace("/".addcslashes(COCKPIT_SITE_DIR, "/")."/", "", $targetpath),
+            "time" => time()
+        ];
 
         // ---update discussion entry
         $discussion["cancelled"] = $this->param('cancelled');

@@ -366,6 +366,116 @@ class RestApi extends \LimeExtra\Controller {
         return json_encode($photographer, JSON_PRETTY_PRINT);
     }
 
+    public function sendEmail() {
+        
+        $urls;
+        $title;
+        $bodies = array();
+        
+        $type = $this->param('type');
+        if(!$type) return $this->stop('{"error": "Missing param1"}', 412);
+
+        $photographers = $this->param('photographers');
+        if(!$photographers) return $this->stop('{"error": "Missing param2"}', 412);
+
+        $date = $this->param('date');
+        if(!$date) return $this->stop('{"error": "Missing param3"}', 412);
+
+        switch($type) {
+            case "em-created":
+            $urls = ["duo_created.html", "duo_created_plain.html"];
+            $title = "Your discussion is going to start on ".date("m-Y", strtotime($date));
+            
+            foreach($photographers as $author) {
+                foreach($urls as $url) {
+                    $body = file_get_contents(COCKPIT_DIR."/mail_templates/".$url);
+                    $body = preg_replace("/{{server}}/", $this->app->config["fiiiirst"]["host"], $body);
+                    $body = preg_replace("/{{name}}/", $author["name"], $body);
+                    $body = preg_replace("/{{date}}/", date("F Y", strtotime($date)), $body);
+                    
+                    array_push($bodies, $body);
+                }
+            }
+            
+            break;
+
+            case "em-reminder":
+            $urls= ["duo_reminder.html", "duo_reminder_plain.html"];
+            $title = "Fiiiirst - reminder";
+            
+            foreach($photographers as $author) {
+                foreach($urls as $url) {
+                    $body = file_get_contents(COCKPIT_DIR."/mail_templates/".$url);
+                    $body = preg_replace("/{{server}}/", $this->app->config["fiiiirst"]["host"], $body);
+                    $body = preg_replace("/{{name}}/", $author["name"], $body);
+                    $body = preg_replace("/{{date}}/", date("F Y", strtotime($date)), $body);
+                    
+                    array_push($bodies, $body);
+                }
+            }
+            break;
+
+            case "em-1week-reminder":
+            $urls = ["duo_week_reminder.html", "duo_week_reminder_plain.html"];
+            $title = "Fiiiirst - Your discussion is going to start in 7 days!";
+            
+            foreach($photographers as $author) {
+                foreach($urls as $url) {
+                    $body = file_get_contents(COCKPIT_DIR."/mail_templates/".$url);
+                    $body = preg_replace("/{{server}}/", $this->app->config["fiiiirst"]["host"], $body);
+                    $body = preg_replace("/{{name}}/", $author["name"], $body);
+                    
+                    array_push($bodies, $body);
+                }
+            }
+            break;
+
+            case "em-activated":
+            $urls= ["discussion_activated_first.html", "discussion_activated_first_plain.html", "discussion_activated.html", "discussion_activated_plain.html"];
+            $title = "Fiiiirst - Your discussion can start now!";
+            
+            $i = 0;
+            foreach($urls as $url) {
+                $author = ($i < 2) ? $photographers[0] : $photographers[1];
+                $body = file_get_contents(COCKPIT_DIR."/mail_templates/".$url);
+                $body = preg_replace("/{{server}}/", $this->app->config["fiiiirst"]["host"], $body);
+                $body = preg_replace("/{{name}}/", $author["name"], $body);
+                
+                array_push($bodies, $body);
+                $i++;
+            }
+            break;
+
+            case "em-published":
+            $urls = ["discussion_published.html", "discussion_published_plain.html"];
+            $title = "Fiiiirst: Publication!";
+
+            foreach($photographers as $author) {
+                foreach($urls as $url) {
+                    $body = file_get_contents(COCKPIT_DIR."/mail_templates/".$url);
+                    $body = preg_replace("/{{server}}/", $this->app->config["fiiiirst"]["host"], $body);
+                    $body = preg_replace("/{{final}}/", $this->app->config["fiiiirst"]["host"].'/discussion/'.$photographers[0]["name_slug"]."-".$photographers[1]["name_slug"], $body);
+                    
+                    array_push($bodies, $body);
+                }
+            }
+            break;
+        } 
+ 
+        //send email
+        $i = 0;
+        foreach($photographers as $author) {
+
+            if(!$this->app->mailer->mail($author["email"], $title, $bodies[$i], ["alt_body" => $bodies[$i+1]])) {
+                return $this->stop('{"error": "Email error"}', 412);
+            }
+            
+            $i += 2;
+        }
+
+        return 1;
+    }
+
     public function listUsers() {
 
         $user = $this->module('cockpit')->getUser();
