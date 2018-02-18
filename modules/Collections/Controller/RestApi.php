@@ -251,9 +251,11 @@ class RestApi extends \LimeExtra\Controller {
         
         //path
         $path = $this->app->path('#discussions:')."_".$discussion_slug;
+        $generatepath = $this->app->path('#discussions:').$discussion_slug;
         
         //create folder
         if (!is_dir($path)) mkdir($path);
+        if (!is_dir($generatepath)) mkdir($generatepath);
         
         //upload
         $filename = preg_replace('/[^a-zA-Z0-9-_\.]/','', str_replace(' ', '-', $_FILES['file']['name']));
@@ -265,9 +267,11 @@ class RestApi extends \LimeExtra\Controller {
         }
     
         if(!isset($discussion["uploads"])) $discussion["uploads"] = [];
+        $original = preg_replace("/".addcslashes(COCKPIT_SITE_DIR, "/")."/", "", $targetpath);
         $discussion["uploads"][] = [
-            "original" => preg_replace("/".addcslashes(COCKPIT_SITE_DIR, "/")."/", "", $targetpath),
-            "time" => time()
+            "original" => $original,
+            "time" => time(),
+            "width" => getimagesize("http://".$this->app->config["fiiiirst"]["api"].$original)[0]
         ];
 
         // ---update discussion entry

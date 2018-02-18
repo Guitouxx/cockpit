@@ -100,7 +100,8 @@ $this->module("cockpit")->extend([
             'rebuild' => false,
             'base64' => false,
             'output' => false,
-            'domain' => false
+            'domain' => false,
+            'path' => ''
         ), $options);
 
         extract($options);
@@ -179,7 +180,9 @@ $this->module("cockpit")->extend([
 
         $filetime = filemtime($path);
         $hash = md5($path.json_encode($options))."_{$width}x{$height}_{$quality}_{$filetime}_{$mode}_".md5($fp).".{$ext}";
+        
         $savepath = rtrim($this->app->path($cachefolder), '/')."/{$hash}";
+        if($options["path"]) $savepath = rtrim($this->app->path($cachefolder), '/')."/".$options["path"]."/{$hash}";
 
         if ($rebuild || !file_exists($savepath)) {
 

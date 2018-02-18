@@ -307,9 +307,11 @@ class RestApi extends \LimeExtra\Controller {
         if(count($photographer["uploads"]) >= 15) return $this->stop('{"error": "Sorry, you cannot upload more than 15 pictures"}', 412);
         
         $path = $this->app->path('#folios:')."_".$user_slug;
+        $generatedpath = $this->app->path('#folios:').$user_slug;
         
-        //create folder
+        //create folders
         if (!is_dir($path)) mkdir($path);
+        if (!is_dir($generatedpath)) mkdir($generatedpath);
         
         $total_files = count($_FILES["file"]["name"]);
         
@@ -334,7 +336,7 @@ class RestApi extends \LimeExtra\Controller {
             $thumbnail = $this->module('cockpit')->thumbnail($options);
        
             if(!isset($photographer["uploads"])) $photographer["uploads"] = [];
-            $photographer["uploads"][] = ["original" => $options["src"], "thumb" => $thumbnail];
+            $photographer["uploads"][] = ["original" => $options["src"], "width" => getimagesize("http://".$this->app->config["fiiiirst"]["api"].$options["src"])[0], "thumb" => $thumbnail];
         }
 
 
@@ -523,6 +525,8 @@ class RestApi extends \LimeExtra\Controller {
             'base64' => intval($this->param('b64', false)),
             'output' => intval($this->param('o', false)),
             'domain' => intval($this->param('d', false)),
+            'path' => $this->param('path', false),
+            'cachefolder' => $this->param('cachefolder', false)
         ];
 
         foreach([
