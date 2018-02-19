@@ -403,7 +403,7 @@ class RestApi extends \LimeExtra\Controller {
 
             case "em-reminder":
             $urls= ["duo_reminder.html", "duo_reminder_plain.html"];
-            $title = "Fiiiirst - reminder";
+            $title = "Fiiiirst - Reminder";
             
             foreach($photographers as $author) {
                 foreach($urls as $url) {
@@ -462,20 +462,49 @@ class RestApi extends \LimeExtra\Controller {
                 }
             }
             break;
+
+            case "remindAuthor":
+            $urls = ["author_reminder.html", "author_reminder_plain.html"];
+            $title = "Fiiiirst - Reminder";
+
+            $turn = $this->param('turn');
+            if(!$turn) return $this->stop('{"error": "Missing param4"}', 412);
+            
+            foreach($photographers as $author) {
+                if($author["_id"] === $turn["_id"]) {
+                    foreach($urls as $url) {
+                        $body = file_get_contents(COCKPIT_DIR."/mail_templates/".$url);
+                        $body = preg_replace("/{{server}}/", $this->app->config["fiiiirst"]["host"], $body);
+                        $body = preg_replace("/{{name}}/", $author["name"], $body);
+                        
+                        array_push($bodies, $body);
+                    }
+                }
+            }
+            break;
         } 
  
         //send email
-        $i = 0;
-        foreach($photographers as $author) {
-
-            if(!$this->app->mailer->mail($author["email"], $title, $bodies[$i], ["alt_body" => $bodies[$i+1]])) {
-                return $this->stop('{"error": "Email error"}', 412);
+        if($type === "remindAuthor") {
+            foreach($photographers as $author) {
+                if($author["_id"] === $turn["_id"]) {
+                    return $this->app->mailer->mail($author["email"], $title, $bodies[0], ["alt_body" => $bodies[1]]);
+                }
             }
-            
-            $i += 2;
         }
-
-        return 1;
+        else {
+            $i = 0;
+            foreach($photographers as $author) {
+    
+                if(!$this->app->mailer->mail($author["email"], $title, $bodies[$i], ["alt_body" => $bodies[$i+1]])) {
+                    return $this->stop('{"error": "Email error"}', 412);
+                }
+                
+                $i += 2;
+            }
+    
+            return 1;
+        }
     }
 
     public function listUsers() {
