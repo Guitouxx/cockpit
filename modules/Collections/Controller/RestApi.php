@@ -36,6 +36,11 @@ class RestApi extends \LimeExtra\Controller {
         if ($skip     = $this->param('skip', null))     $options['skip'] = intval($skip);
         if ($populate = $this->param('populate', null)) $options['populate'] = $populate;
 
+        // cast string values if get request
+        if ($filter && isset($_GET['filter'])) {
+            $options['filter'] = $this->_fixStringBooleanNumericValues($filter);
+        }
+
         // fields filter
         $fieldsFilter = [];
 
@@ -305,5 +310,32 @@ class RestApi extends \LimeExtra\Controller {
         }
 
         return json_encode($discussion, JSON_PRETTY_PRINT);
+    }
+
+    protected function _fixStringBooleanNumericValues(&$array) {
+
+        if (!is_array($array)) {
+            return $array;
+        }
+
+        foreach ($array as $k => $v) {
+
+            if (is_array($array[$k])) {
+                $array[$k] = $this->_fixStringBooleanNumericValues($array[$k]);
+            }
+
+            if (is_string($v)) {
+
+                if ($v === 'true' || $v === 'false') {
+                    $v = filter_var($v, FILTER_VALIDATE_BOOLEAN);
+                } elseif(is_numeric($v)) {
+                    $v = $v + 0;
+                }
+            }
+
+            $array[$k] = $v;
+        }
+
+        return $array;
     }
 }
