@@ -111,7 +111,7 @@ class RestApi extends \LimeExtra\Controller {
         if (isset($data["password"])) {
 
             if (strlen($data["password"])){
-                $data["password"] = $this->app->hash($data["password"]);
+                $data["password"] = $this->app->hash($data["password"], PASSWORD_DEFAULT);
             } else {
                 unset($data["password"]);
             }
@@ -279,7 +279,7 @@ class RestApi extends \LimeExtra\Controller {
             return $this->stop('{"error": "Sorry, there is a problem with your account.<br/>Please contact me at guillaume@fiiiirst.com"}', 412);
         }
 
-        $user["password"] = $this->app->hash($data["password"]);
+        $user["password"] = $this->app->hash($data["password"], PASSWORD_DEFAULT);
         
         $this->app->storage->save("cockpit/accounts", $user);
 
