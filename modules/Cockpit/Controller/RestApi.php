@@ -132,6 +132,7 @@ class RestApi extends \LimeExtra\Controller {
         //---create photography entry
         $photographer = $this->module('collections')->save("photographers", [
             'name' => $data["name"],
+            'starting_month' => "*",
             'edition' => $this->app->config["fiiiirst"]["edition"],
             'email' => $data["email"]
         ]);
