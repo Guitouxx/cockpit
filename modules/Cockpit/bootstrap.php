@@ -183,6 +183,7 @@ $this->module("cockpit")->extend([
         $savepath = rtrim($this->app->path($cachefolder), '/')."/{$hash}";
        
         if($options["path"]) {
+            $filetime = time();
             $hash = "{$filetime}_{$width}x{$height}_{$quality}_{$mode}.{$ext}"; 
             $savepath = rtrim($this->app->path($cachefolder), '/')."/".$options["path"]."/{$hash}";
         } 
