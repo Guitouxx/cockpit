@@ -482,6 +482,20 @@ class RestApi extends \LimeExtra\Controller {
                     }
                 }
             }
+
+            case "em-portfolio-reminder":
+            $urls = ["author_portfolio_reminder.html", "author_portfolio_reminder_plain.html"];
+            $title = "Fiiiirst - Portfolio Reminder";
+
+            foreach($photographers as $author) {
+                foreach($urls as $url) {
+                    $body = file_get_contents(COCKPIT_DIR."/mail_templates/".$url);
+                    $body = preg_replace("/{{server}}/", $this->app->config["fiiiirst"]["host"], $body);
+                    $body = preg_replace("/{{name}}/", $author["name"], $body);
+                    
+                    array_push($bodies, $body);
+                }
+            }
             break;
         } 
  
@@ -491,6 +505,11 @@ class RestApi extends \LimeExtra\Controller {
                 if($author["_id"] === $turn["_id"]) {
                     return $this->app->mailer->mail($author["email"], $title, $bodies[0], ["alt_body" => $bodies[1]]);
                 }
+            }
+        }
+        else if($type == "em-portfolio-reminder") {
+            foreach($photographers as $author) {
+                return $this->app->mailer->mail($author["email"], $title, $bodies[0], ["alt_body" => $bodies[1]]);
             }
         }
         else {
