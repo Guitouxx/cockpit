@@ -457,7 +457,7 @@ class RestApi extends \LimeExtra\Controller {
                 foreach($urls as $url) {
                     $body = file_get_contents(COCKPIT_DIR."/mail_templates/".$url);
                     $body = preg_replace("/{{server}}/", $this->app->config["fiiiirst"]["host"], $body);
-                    $body = preg_replace("/{{final}}/", $this->app->config["fiiiirst"]["host"].'/discussion/'.$photographers[0]["name_slug"]."-".$photographers[1]["name_slug"], $body);
+                    $body = preg_replace("/{{final}}/", $this->app->config["fiiiirst"]["host_min"].'/discussion/'.$photographers[0]["name_slug"]."-".$photographers[1]["name_slug"], $body);
                     
                     array_push($bodies, $body);
                 }
