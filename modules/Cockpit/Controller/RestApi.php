@@ -482,6 +482,7 @@ class RestApi extends \LimeExtra\Controller {
                     }
                 }
             }
+            break;
 
             case "em-portfolio-reminder":
             $urls = ["author_portfolio_reminder.html", "author_portfolio_reminder_plain.html"];
