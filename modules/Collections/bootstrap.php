@@ -110,7 +110,7 @@ $this->module("collections")->extend([
                 $this->app->helper("fs")->delete("#storage:collections/rules/{$name}.{$method}.php");
             }
 
-            $this->app->storage->dropCollection("collections/{$collection}");
+            $this->app->storage->dropCollection("collections/{$collection['_id']}");
 
             $this->app->trigger('collections.removecollection', [$name]);
             $this->app->trigger("collections.removecollection.{$name}", [$name]);
@@ -328,6 +328,10 @@ $this->module("collections")->extend([
                             }
 
                             break;
+                    }
+
+                    if (!$isUpdate && isset($field['required']) && $field['required'] && !$value) {
+                        // Todo
                     }
 
                     if ($isUpdate && $field['type'] == 'password' && !$value && isset($entry[$field['name']])) {
