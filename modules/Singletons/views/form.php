@@ -59,12 +59,24 @@
 
                             <div class="uk-panel">
 
-                                <label class="uk-text-bold">
-                                    { field.label || field.name }
-                                    <span if="{ field.localize }" class="uk-icon-globe" title="@lang('Localized field')" data-uk-tooltip="pos:'right'"></span>
+                                <label>
+
+                                    <span class="uk-text-bold">{ field.label || field.name }</span>
+
+                                    <span if="{ field.localize }" data-uk-dropdown="mode:'click'">
+                                        <a class="uk-icon-globe" title="@lang('Localized field')" data-uk-tooltip="pos:'right'"></a>
+                                        <div class="uk-dropdown uk-dropdown-close">
+                                            <ul class="uk-nav uk-nav-dropdown">
+                                                <li class="uk-nav-header">@lang('Copy content from:')</li>
+                                                <li show="{parent.lang}"><a onclick="{parent.copyLocalizedValue}" lang="" field="{field.name}">@lang('Default')</a></li>
+                                                <li show="{parent.lang != language.code}" each="{language,idx in languages}" value="{language.code}"><a onclick="{parent.parent.copyLocalizedValue}" lang="{language.code}" field="{field.name}">{language.label}</a></li>
+                                            </ul>
+                                        </div>
+                                    </span>
+
                                 </label>
 
-                                 <div class="uk-margin uk-text-small uk-text-muted">
+                                <div class="uk-margin uk-text-small uk-text-muted">
                                     { field.info || ' ' }
                                 </div>
 
@@ -95,7 +107,7 @@
                         <div class="uk-width-1-1 uk-form-select">
 
                             <label class="uk-text-small">@lang('Language')</label>
-                            <div class="uk-margin-small-top">{ lang ? _.find(languages,{code:lang}).label:'Default' }</div>
+                            <div class="uk-margin-small-top"><span class="uk-badge uk-badge-outline {lang ? 'uk-text-primary' : 'uk-text-muted'}">{ lang ? _.find(languages,{code:lang}).label:'Default' }</span></div>
 
                             <select bind="lang">
                                 <option value="">@lang('Default')</option>
@@ -256,6 +268,14 @@
                 ) { return true; }
 
                 return false;
+            }
+
+            copyLocalizedValue(e) {
+
+                var field = e.target.getAttribute('field'),
+                    lang = e.target.getAttribute('lang');
+
+                this.data[field+(this.lang ? '_':'')+this.lang] = this.data[field+(lang ? '_':'')+lang];
             }
 
         </script>
