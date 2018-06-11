@@ -432,6 +432,7 @@ class RestApi extends \LimeExtra\Controller {
                 array_push($bodies, $body);
                 $i++;
             }
+            break;
 
             case "em-activated":
             $urls= ["discussion_activated_first.html", "discussion_activated_first_plain.html", "discussion_activated.html", "discussion_activated_plain.html"];
