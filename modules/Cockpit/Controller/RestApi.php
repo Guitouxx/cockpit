@@ -419,19 +419,19 @@ class RestApi extends \LimeExtra\Controller {
             break;
 
             case "em-1week-reminder":
-            $urls = ["duo_week_reminder.html", "duo_week_reminder_plain.html"];
+            $urls= ["duo_week_reminder_first.html", "duo_week_reminder_first_plain.html", "duo_week_reminder.html", "duo_week_reminder_plain.html"];
             $title = "Fiiiirst - Your discussion is going to start in 7 days!";
             
-            foreach($photographers as $author) {
-                foreach($urls as $url) {
-                    $body = file_get_contents(COCKPIT_DIR."/mail_templates/".$url);
-                    $body = preg_replace("/{{server}}/", $this->app->config["fiiiirst"]["host"], $body);
-                    $body = preg_replace("/{{name}}/", $author["name"], $body);
-                    
-                    array_push($bodies, $body);
-                }
+            $i = 0;
+            foreach($urls as $url) {
+                $author = ($i < 2) ? $photographers[0] : $photographers[1];
+                $body = file_get_contents(COCKPIT_DIR."/mail_templates/".$url);
+                $body = preg_replace("/{{server}}/", $this->app->config["fiiiirst"]["host"], $body);
+                $body = preg_replace("/{{name}}/", $author["name"], $body);
+                
+                array_push($bodies, $body);
+                $i++;
             }
-            break;
 
             case "em-activated":
             $urls= ["discussion_activated_first.html", "discussion_activated_first_plain.html", "discussion_activated.html", "discussion_activated_plain.html"];
