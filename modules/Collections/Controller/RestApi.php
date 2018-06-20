@@ -263,6 +263,7 @@ class RestApi extends \LimeExtra\Controller {
         
         //upload
         $filename = preg_replace('/[^a-zA-Z0-9-_\.]/','', str_replace(' ', '-', $_FILES['file']['name']));
+        $filename = rand(0, 1000)."_".$filename;
         $tempFile = $_FILES['file']['tmp_name'];
         $targetpath = $path."/".$filename;
             
